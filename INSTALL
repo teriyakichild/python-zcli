@@ -1,0 +1,13 @@
+INSTALL Info
+========================
+
+Install with:
+make install
+
+if you don't have make installed:
+python setup.py install
+
+Build RPMs with:
+make rpms
+
+

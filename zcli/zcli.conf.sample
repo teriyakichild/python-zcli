@@ -1,0 +1,9 @@
+[dev]
+host: dev_host
+username: dev_username
+password: dev_password
+
+[ask]
+host: ask
+username: ask
+password: ask
