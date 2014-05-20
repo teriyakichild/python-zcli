@@ -25,7 +25,8 @@ def cli():
     c.username = raw_input('Username: ')
   if c.password == 'ask':
     c.password = getpass.getpass()
-  zapi = ZabbixAPI(c.host,verify=False)
+  zapi = ZabbixAPI(c.host)
+  zapi.session.verify = False
   # Login to the Zabbix API
   zapi.login(c.username, c.password)
 
