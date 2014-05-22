@@ -30,7 +30,7 @@ def cli():
                                        dest="subparser_name")
 
     method_parser = subparsers.add_parser('method', help='Zabbix API RPC mode')
-    method_parser.add_argument("method",  action='store_false',
+    method_parser.add_argument("method",
                                help="Zabbix API method (host.get,hostgroups.get," +
                                "usergroups.get)")
     method_parser.add_argument("arguments", nargs="?",
