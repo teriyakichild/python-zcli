@@ -42,13 +42,13 @@ def build_parsers(conf):
     subparsers = parser.add_subparsers(dest="subparser_name",)
 
     method_parser = subparsers.add_parser('method', help='Zabbix API RPC mode')
-    method_parser.add_argument("method",
+    method_parser.add_argument('method',
+                               help='Zabbix API RPC method (host.get,'
+                               'hostgroups.get,usergroups.get)')
+    method_parser.add_argument("-a",'--arguments',
+                               dest='arguments', default=['output=extend'],
                                help="Zabbix API RPC method (host.get,"
-                               "hostgroups.get,usergroups.get)")
-    method_parser.add_argument("arguments",
-                               nargs="?",
-                               help="Zabbix API arguments for method",
-                               default="output=extend")
+                               "hostgroups.get,usergroups.get)", action='append')
 
     automator_parser = subparsers.add_parser('automator',
                                              help='Friendly object export commands')
@@ -177,7 +177,7 @@ def rpc(*args):
             method_arr = rpc_method.split('.')
         else:
             raise ValueError('Invalid RPC syntax should be object.action')
-        args_arr = args.split(';')
+        args_arr = args
         arguments = {}
         for argument in args_arr:
             if '=' in argument:

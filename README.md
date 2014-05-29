@@ -14,7 +14,7 @@ CLI tool that wraps the zabbix API
 Usage
 ===============
 
-zcli --host https://zabbix.example.com method 'template.get' 'output=extend;templateids=[6];selectHttpTests=extend;selectTriggers=extend'
+zcli -u https://zabbix.example.com -U username method 'template.get' -a 'output=extend' -a 'templateids=[6]' -a 'selectHttpTests=extend' -a 'selectTriggers=extend'
 
 Config
 ===============
@@ -29,4 +29,3 @@ See INSTALL
 How to report bugs
 ===============
 Visit http://github.com/teriyakichild/python-zcli/issues
-
