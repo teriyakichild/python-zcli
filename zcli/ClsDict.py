@@ -19,7 +19,7 @@ class ClsDict(dict):
 
     # CLS_ITEMS kept from iter and dict, but not properties
     CLSDICT_PROPERTIES = ['cls_properties', '_cls_seen_flags',
-                                '__dict__', '__members__', '__methods__', '__class__']
+                          '__dict__', '__members__', '__methods__', '__class__']
 
     def __init__(self, *args, **kwargs):
         """Build a fancy attrdict like object
