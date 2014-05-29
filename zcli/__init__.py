@@ -1,7 +1,8 @@
+"""Zabbix CLI provides basic RPC queries and import export automation"""
 from __future__ import print_function
 from pyzabbix import ZabbixAPI, ZabbixAPIException
 from config import config
-from automator import ZabbixAutomator
+from ZAutomator import ZAutomator
 import argparse
 import json
 import getpass
@@ -9,52 +10,82 @@ import sys
 import os
 
 
-def cli():
-    c = config()
-    envs = c.sections if len(c.sections) else ['Set in conf',]
-    parser = argparse.ArgumentParser(add_help=False)
+def build_parsers(conf):
+    """Build parsers for cli"""
+    # TODO(Nick) consider moving to
+    # usage = "usage: whichboom [-h] [-s | [-h] [-s]] host"
+    # description = "Lookup servers by ip address from host file"
+    # parser = argparse.ArgumentParser(description=description, usage=usage)
+
+    envs = conf.sections if len(conf.sections) else ['Unset',]
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                     description=__doc__)
+
     parser.add_argument("--debug", help="increase output verbosity",
                         action="store_true")
-    parser.add_argument("-e", "--environment", choices=envs,
+    parser.add_argument("-e", "--environment",
+                        choices=envs,
                         help="Which environment to connect to ({0})".
-                             format(','.join(envs)))
-    parser.add_argument("-h", "--host", default=os.environ.get('ZA_HOST', None),
-                        help="Zabbix API URL; overrides environment.host" +
+                        format(','.join(envs)))
+    parser.add_argument("-u", "--url",
+                        default=os.environ.get('ZA_URL', None),
+                        help="(default) Zabbix API URL; overrides environment.url "
                         "full URL format https://zabbixhost.example.com")
-    parser.add_argument("-u", "--user", default=os.environ.get('ZA_USER', None),
+    parser.add_argument("-U", "--user",
+                        default=os.environ.get('ZA_USER', None),
                         help="Zabbix API user; overrides environment.password")
-    parser.add_argument("-p", "--password", default=None,
-                        help="Zabbix API password; set on CLI ZA_PASSWORD or" +
+    parser.add_argument("-p", "--password",
+                        default=None,
+                        help="Zabbix API password; set on CLI ZA_PASSWORD or "
                         "prompt overrides environment.password")
-    subparsers = parser.add_subparsers(help='sub-command help',
-                                       dest="subparser_name")
+
+    subparsers = parser.add_subparsers(dest="subparser_name",)
 
     method_parser = subparsers.add_parser('method', help='Zabbix API RPC mode')
     method_parser.add_argument("method",
-                               help="Zabbix API method (host.get,hostgroups.get," +
-                               "usergroups.get)")
-    method_parser.add_argument("arguments", nargs="?",
+                               help="Zabbix API RPC method (host.get,"
+                               "hostgroups.get,usergroups.get)")
+    method_parser.add_argument("arguments",
+                               nargs="?",
                                help="Zabbix API arguments for method",
                                default="output=extend")
 
-    abstract_objects = ['']
-    export_parser = subparsers.add_parser('export',
-                                          help='Friendly object export commands')
-    export_parser.add_argument('--object', choices=ZabbixAutomator.objects())
-    export_parser.add_argument('-O', '--file', type=argparse.FileType(mode='w'),
-                               help='Export to file')
+    automator_parser = subparsers.add_parser('automator',
+                                             help='Friendly object export commands')
 
-    parser.add_argument('--help', action='store_true')
+    automator_parser.add_argument('--action', choices=ZAutomator.actions(),
+                                  required=True,
+                                  help='Action to perform')
+    automator_parser.add_argument('--object', choices=ZAutomator.objects(),
+                                  required=True,
+                                  help='Top level zabbix object to fully export '
+                                  'usually a template or host with all sub objects '
+                                  'Example: --object template')
+    automator_parser.add_argument('--id',
+                                  required=True,
+                                  help='Id attribute for the object query '
+                                  'Example: --object template --id 34')
+
+    iogroup = automator_parser.add_mutually_exclusive_group()
+    iogroup.add_argument('-o', '--out', type=argparse.FileType(mode='w'),
+                         help='Output bundle file')
+    iogroup.add_argument('-i', '--in', type=argparse.FileType(mode='r'),
+                         help='Input Bundle file')
+
+    return parser
+
+
+def cli():
+    """Main CLI entry"""
+    c = config()
+    parser = build_parsers(c)
 
     try:
-        args = parser.parse_args()
+        args = parser.parse_args(sys.argv[1:])
     except IOError as e:
         print("Could not open file %s: %s" % (e.filename, e.strerror),
               file=sys.stderr)
         sys.exit(1)
-
-    if args.help:
-        parser.print_help()
 
     if args.debug:
         print("Debug enabled", file=sys.stderr)
@@ -62,15 +93,15 @@ def cli():
     if args.environment:
         c.env = args.environment
 
-    if args.host:
-        c.host = args.host
+    if args.url:
+        c.url = args.url
     else:
         try:
-            if not c.host or c.host == 'ask':
-                c.host = raw_input('Host: ')
+            if not c.url or c.url == 'ask':
+                c.url = raw_input('URL: ')
         except Exception:
-            print('No host defined on command line or config file', file=sys.stderr)
-            parser.print_help()
+            print('No url defined on command line or config file', file=sys.stderr)
+            #parser.print_help()
             sys.exit(1)
     if args.user:
         c.username = args.user
@@ -95,7 +126,7 @@ def cli():
             parser.print_help()
             sys.exit(1)
 
-    zapi = ZabbixAPI(c.host)
+    zapi = ZabbixAPI(c.url)
     zapi.session.verify = False
     # Login to the Zabbix API
     try:
@@ -103,12 +134,12 @@ def cli():
     except Exception as e:
         if e.__class__.__name__ == 'HTTPError' and e.response.status_code == 404:
             try:
-                zapi = ZabbixAPI(c.host + '/zabbix')
+                zapi = ZabbixAPI(c.url + '/zabbix')
                 zapi.session.verify = False
                 zapi.login(c.username, c.password)
             except Exception as e:
                 if e.__class__.__name__ == 'HTTPError' and e.response.status_code == 404:
-                    print("Invalid Host url", file=sys.stderr)
+                    print("Invalid API url", file=sys.stderr)
                     exit(1)
                 raise
         else:
@@ -116,54 +147,62 @@ def cli():
 
     if args.subparser_name == 'method':
         return json.dumps(rpc(zapi, args.method, args.arguments), indent=2)
-    elif args.subparser_name == 'export':
-        return export(zapi, args)
+    elif args.subparser_name == 'automator':
+        automator(zapi, args)
 
 
-def rpc(zapi, rpc_method, args):
-    if '.' in rpc_method:
-        method_arr = rpc_method.split('.')
-    args_arr = args.split(';')
-    arguments = {}
-    for argument in args_arr:
-        if '=' in argument:
-            tmp = [a for a in argument.split('=')]
-            try:
-                value = eval(tmp[1])
-            except (NameError, SyntaxError):
-                value = tmp[1]
-            arguments[tmp[0]] = value
-        elif 'delete' in method_arr[1]:
-            arguments = argument
+def automator(zapi, args):
+    """Automator subcommand"""
+    import pdb;pdb.set_trace()
+    automator = ZAutomator(rpc(zapi))
+    action = args.action
+    getattr(automator, action)(args.object, args.id)
 
-    func = getattr(getattr(zapi, method_arr[0], None), method_arr[1], None)
-    try:
-        if isinstance(arguments, str):
-            print(arguments)
-            ret = func(arguments[0])
+
+def rpc(*args):
+    """rpc works as a function generator or as the normal rpc method"""
+    if len(args) == 2:
+        raise TypeError('rpc must be pre initialized with the zapi or '
+                        'called with all 3 args at once: '
+                        'rpc(zapi, rpc_method, query_opts)')
+
+    if len(args) == 1 or len(args) == 3:
+        zapi = args[0]
+
+    if len(args) != 3 and len(args) != 1:
+        raise TypeError('rpc expect 1 or 3 arguments %s given' % len(args))
+
+    def inner(rpc_method, args):
+        if '.' in rpc_method:
+            method_arr = rpc_method.split('.')
         else:
-            ret = func(**arguments)
-    except ZabbixAPIException as e:
-        print(e, file=sys.stderr)
-        sys.exit(1)
-    return ret
+            raise ValueError('Invalid RPC syntax should be object.action')
+        args_arr = args.split(';')
+        arguments = {}
+        for argument in args_arr:
+            if '=' in argument:
+                tmp = [a for a in argument.split('=')]
+                try:
+                    value = eval(tmp[1])
+                except (NameError, SyntaxError):
+                    value = tmp[1]
+                arguments[tmp[0]] = value
+            elif 'delete' in method_arr[1]:
+                arguments = argument
 
-
-def export(zapi, args):
-    """Export zapi objects to stdout or file"""
-    #TODO(nickshobe) Ready for recursive exporting
-    # It looks like I can query web scenario objects by application name, or id not
-    # template id
-    obj = {'test': 'bob'}
-    retval = json.dumps(obj)
-    if args.file:
+        func = getattr(getattr(zapi, method_arr[0], None), method_arr[1], None)
         try:
-            args.file.write(retval)
-            retval = ''
-        except:
-            print("Failed to write to specified file %s: writing to stdout" %
-                  args.file.name, sys.stderr)
-        finally:
-            args.file.close()
+            if isinstance(arguments, str):
+                print(arguments)
+                ret = func(arguments[0])
+            else:
+                ret = func(**arguments)
+        except ZabbixAPIException as e:
+            print(e, file=sys.stderr)
+            sys.exit(1)
+        return ret
 
-    return retval
+    if len(args) == 3:
+        return inner(*args[1:])
+    else:
+        return inner
