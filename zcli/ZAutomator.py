@@ -1,7 +1,7 @@
 import json
 from Tools import *
 from ClsDict import ClsDict
-from Zabbix import Zabbix
+import Zabbix
 
 
 class ZAutomator(object):
@@ -26,15 +26,17 @@ class ZAutomator(object):
     #### Actions ####
     @register_action
     def extract(self, obj, id):
-        """Extract a bundle or object from a Zabbix environment"""
+        """Extract objects from a Zabbix environment"""
         if obj == 'template':
-            zabbix = Zabbix(self.zapi, self.rpc)
-        pass
+            bundle = getattr(Zabbix, obj)(self.rpc, id=id)
+            import pdb;pdb.set_trace()
 
     @register_action
     def deploy(self):
         """Deploy a bundle or object to a target Zabbix environment"""
         pass
+
+    #### Objects ####
 
     #### Internal Methods ####
     def exporter(args):
