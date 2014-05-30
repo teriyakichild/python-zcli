@@ -119,7 +119,10 @@ def cli():
         c.password = tmp_pass
     else:
         try:
-            if args.password or c.password == 'ask':
+# Check to see if we supplied a password on the command line.
+            if args.password:
+          		    c.password = args.password
+            if c.password == 'ask':
                 c.password = getpass.getpass()
         except Exception:
             print('No password defined on command line or config file', file=sys.stderr)
