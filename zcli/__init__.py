@@ -37,7 +37,7 @@ def build_parsers(conf):
     parser.add_argument("-p", "--password",
                         default=None,
                         help="Zabbix API password; set on CLI ZA_PASSWORD or "
-                        "prompt overrides environment.password")
+                        "prompt by passing ask to -p overrides environment.password")
 
     subparsers = parser.add_subparsers(dest="subparser_name",)
 
