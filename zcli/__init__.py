@@ -37,7 +37,7 @@ def build_parsers(conf):
     parser.add_argument("-p", "--password",
                         default=None,
                         help="Zabbix API password; set on CLI ZA_PASSWORD or "
-                        "prompt overrides environment.password")
+                        "prompt by passing ask to -p overrides environment.password")
 
     subparsers = parser.add_subparsers(dest="subparser_name",)
 
@@ -119,7 +119,10 @@ def cli():
         c.password = tmp_pass
     else:
         try:
-            if args.password or c.password == 'ask':
+# Check to see if we supplied a password on the command line.
+            if args.password:
+          		    c.password = args.password
+            if c.password == 'ask':
                 c.password = getpass.getpass()
         except Exception:
             print('No password defined on command line or config file', file=sys.stderr)
