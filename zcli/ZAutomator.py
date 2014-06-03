@@ -9,6 +9,7 @@ class ZAutomator(object):
     def __init__(self, rpc_callback):
         """Class takes zapi instance and an RPC helper function"""
         self.rpc = rpc_callback
+        self.bundles = []
 
     #### Internal Properties
     @property
@@ -29,7 +30,7 @@ class ZAutomator(object):
         """Extract objects from a Zabbix environment"""
         if obj == 'template':
             bundle = getattr(Zabbix, obj)(self.rpc, id=id)
-            import pdb;pdb.set_trace()
+            self.bundles.append(bundle)
 
     @register_action
     def deploy(self):

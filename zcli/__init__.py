@@ -156,6 +156,9 @@ def automator(zapi, args):
     automator = ZAutomator(rpc(zapi))
     action = args.action
     getattr(automator, action)(args.object, args.id)
+    #bundles = [dict(x) for x in automator.bundles]
+    #import pdb;pdb.set_trace()
+    print(json.dumps(automator.bundles, indent=2))
 
 
 def rpc(*args):
