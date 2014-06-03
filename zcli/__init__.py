@@ -45,10 +45,10 @@ def build_parsers(conf):
     method_parser.add_argument('method',
                                help='Zabbix API RPC method (host.get,'
                                'hostgroups.get,usergroups.get)')
-    method_parser.add_argument("-a",'--arguments',
-                               dest='arguments', default=['output=extend'],
-                               help="Zabbix API RPC method (host.get,"
-                               "hostgroups.get,usergroups.get)", action='append')
+    method_parser.add_argument("-a", '--arguments',
+                               dest='arguments',
+                               default=['output=extend'],
+                               help="RPC params", action='append')
 
     automator_parser = subparsers.add_parser('automator',
                                              help='Friendly object export commands')
@@ -156,10 +156,12 @@ def cli():
 
 def automator(zapi, args):
     """Automator subcommand"""
-    import pdb;pdb.set_trace()
     automator = ZAutomator(rpc(zapi))
     action = args.action
     getattr(automator, action)(args.object, args.id)
+    #bundles = [dict(x) for x in automator.bundles]
+    #import pdb;pdb.set_trace()
+    print(json.dumps(automator.bundles, indent=2))
 
 
 def rpc(*args):
@@ -175,7 +177,7 @@ def rpc(*args):
     if len(args) != 3 and len(args) != 1:
         raise TypeError('rpc expect 1 or 3 arguments %s given' % len(args))
 
-    def inner(rpc_method, args):
+    def rpc(rpc_method, args):
         if '.' in rpc_method:
             method_arr = rpc_method.split('.')
         else:
@@ -206,6 +208,6 @@ def rpc(*args):
         return ret
 
     if len(args) == 3:
-        return inner(*args[1:])
+        return rpc(*args[1:])
     else:
-        return inner
+        return rpc

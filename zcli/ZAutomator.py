@@ -1,7 +1,7 @@
 import json
 from Tools import *
 from ClsDict import ClsDict
-from Zabbix import Zabbix
+import Zabbix
 
 
 class ZAutomator(object):
@@ -9,6 +9,7 @@ class ZAutomator(object):
     def __init__(self, rpc_callback):
         """Class takes zapi instance and an RPC helper function"""
         self.rpc = rpc_callback
+        self.bundles = []
 
     #### Internal Properties
     @property
@@ -26,15 +27,17 @@ class ZAutomator(object):
     #### Actions ####
     @register_action
     def extract(self, obj, id):
-        """Extract a bundle or object from a Zabbix environment"""
+        """Extract objects from a Zabbix environment"""
         if obj == 'template':
-            zabbix = Zabbix(self.zapi, self.rpc)
-        pass
+            bundle = getattr(Zabbix, obj)(self.rpc, id=id)
+            self.bundles.append(bundle)
 
     @register_action
     def deploy(self):
         """Deploy a bundle or object to a target Zabbix environment"""
         pass
+
+    #### Objects ####
 
     #### Internal Methods ####
     def exporter(args):
