@@ -47,7 +47,7 @@ def build_parsers(conf):
                                'hostgroups.get,usergroups.get)')
     method_parser.add_argument("-a", '--arguments',
                                dest='arguments',
-                               default=['output=extend'],
+                               default=['output=extend', ],
                                help="RPC params", action='append')
 
     automator_parser = subparsers.add_parser('automator',
@@ -82,6 +82,7 @@ def cli():
 
     try:
         args = parser.parse_args(sys.argv[1:])
+
     except IOError as e:
         print("Could not open file %s: %s" % (e.filename, e.strerror),
               file=sys.stderr)
@@ -196,7 +197,7 @@ def rpc(*args):
         try:
             if isinstance(arguments, str):
                 print(arguments)
-                ret = func(arguments[0])
+                ret = func(arguments)
             else:
                 ret = func(**arguments)
         except ZabbixAPIException as e:
