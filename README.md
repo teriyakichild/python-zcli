@@ -1,5 +1,6 @@
 python-zcli
 ===============
+THS TOOL HAS BEEN DEPRECATED.  Use this instead: https://github.com/teriyakichild/zabbixctl
 
 Copyright © 2014 Rackspace
 Written by: Tony Rogers <tony.rogers@rackspace.com>
